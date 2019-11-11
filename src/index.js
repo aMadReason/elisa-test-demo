@@ -78,11 +78,10 @@ class App extends React.Component {
     const { log } = this.state;
     const message = {
       default: ``,
-      plate: `${this.state.selectedPlate} selected.`,
       wait: `Waited ${getTimerMins(step.displayStamp)} minutes.`,
       acid: `Acid applied.`
     }[step.action || "default"];
-    log.push({ ...step, message });
+    log.push({ ...step, action: step.action, message });
     this.setState({ log }, () => {
       this.logRef.scrollTop = this.logRef.scrollHeight;
     });
@@ -116,18 +115,21 @@ class App extends React.Component {
     this.setState({ timerStamp: stamp, displayStamp: display });
   }
 
-  generateAssayDilutionResults() {
-    const {
-      selectedPlate,
-      selectedSamples,
-      dilutionFactor: df,
-      primaryEfficiencyFactor: pef
-    } = this.state;
+  generateAssayDilutionResults(
+    selectedPlate,
+    selectedSamples = {},
+    dilutionFactor,
+    primaryEfficiencyFactor
+  ) {
     const results = {};
     Object.keys(selectedSamples).map(i => {
-      if (selectedSamples[i] && selectedPlate && df) {
+      if (selectedSamples[i] && selectedPlate && dilutionFactor) {
         const value = selectedSamples[i].plates[selectedPlate];
-        return (results[i] = calculateDilutionSeries(value, df, pef));
+        return (results[i] = calculateDilutionSeries(
+          value,
+          dilutionFactor,
+          primaryEfficiencyFactor
+        ));
       }
       return (results[i] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     });
@@ -135,12 +137,9 @@ class App extends React.Component {
   }
 
   handleSelectPlate(e) {
-    this.setState(
-      {
-        selectedPlate: e.target.value
-      },
-      () => this.logStep({ action: "plate" })
-    );
+    this.setState({
+      selectedPlate: e.target.value
+    });
   }
 
   handleSelectSample(key, subject) {
@@ -161,9 +160,37 @@ class App extends React.Component {
     });
   }
 
-  // getTimerMins(stamp) {
-  //   return Math.round(+new Date(stamp) / 1000 / 60);
-  // }
+  timeFunction(value, timestamp) {
+    const timemodifier = 1 - 5 / (timestamp * 1000 * 60);
+    const result = value * timemodifier;
+    return Math.max(0.05, result);
+  }
+
+  processLog() {
+    const {
+      log,
+      selectedPlate: plate,
+      selectedSamples: samples,
+      dilutionFactor: df,
+      primaryEfficiencyFactor: pef
+    } = this.state;
+
+    const assay = this.generateAssayDilutionResults(plate, samples, df, pef);
+
+    // handle primary antibody waits
+
+    const primaryWaits = log.filter(i => i.action === "wait");
+    if (primaryWaits.length > 0) {
+      const primeWait = primaryWaits.reduce(
+        (total, curr) => total + curr.timerStamp,
+        0
+      );
+    }
+
+    // handle secondary antibody waits
+
+    return assay;
+  }
 
   renderResultTable(values) {
     const keys = Object.keys(values);
@@ -199,8 +226,8 @@ class App extends React.Component {
     } = this.state;
     const sampleKeys = Object.keys(selectedSamples);
 
-    const results = this.generateAssayDilutionResults();
-    console.log(results);
+    const results = this.processLog(); //
+    //console.log(results);
 
     return (
       <div className="app-container">
