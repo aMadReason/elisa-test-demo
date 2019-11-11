@@ -27,3 +27,9 @@ export const roundPrecision = (num, dec) => {
     Math.round(num * Math.pow(10, dec) + numSign * 0.0001) / Math.pow(10, dec)
   ).toFixed(dec);
 };
+
+export function timeModifier(value, timestamp) {
+  const timemodifier = 1 - 5 / (timestamp * 1000 * 60);
+  const result = value * timemodifier;
+  return Math.max(0.05, result);
+}

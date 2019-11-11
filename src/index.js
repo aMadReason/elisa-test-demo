@@ -5,7 +5,8 @@ import {
   calculateDilutionFactor,
   calculateDilutionSeries,
   getTimerMins,
-  roundPrecision
+  roundPrecision,
+  timeModifier
 } from "./functions";
 import "./styles.css";
 
@@ -115,6 +116,14 @@ class App extends React.Component {
     this.setState({ timerStamp: stamp, displayStamp: display });
   }
 
+  generateAssayPrimePhase(diluteAssay, timestamp) {
+    const results = { ...diluteAssay };
+    Object.keys(results).map(i => {
+      return (results[i] = results[i].map(c => timeModifier(c, timestamp)));
+    });
+    return results;
+  }
+
   generateAssayDilutionResults(
     selectedPlate,
     selectedSamples = {},
@@ -160,12 +169,6 @@ class App extends React.Component {
     });
   }
 
-  timeFunction(value, timestamp) {
-    const timemodifier = 1 - 5 / (timestamp * 1000 * 60);
-    const result = value * timemodifier;
-    return Math.max(0.05, result);
-  }
-
   processLog() {
     const {
       log,
@@ -175,16 +178,18 @@ class App extends React.Component {
       primaryEfficiencyFactor: pef
     } = this.state;
 
-    const assay = this.generateAssayDilutionResults(plate, samples, df, pef);
+    let assay = this.generateAssayDilutionResults(plate, samples, df, pef);
 
     // handle primary antibody waits
 
     const primaryWaits = log.filter(i => i.action === "wait");
+
     if (primaryWaits.length > 0) {
       const primeWait = primaryWaits.reduce(
         (total, curr) => total + curr.timerStamp,
         0
       );
+      assay = this.generateAssayPrimePhase(assay, primeWait);
     }
 
     // handle secondary antibody waits
