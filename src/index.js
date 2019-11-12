@@ -47,14 +47,15 @@ class App extends React.Component {
     this.state = {
       primaryEfficiencyFactor: 1.0,
       dilutionFactor: null,
-      dilutionSeries: [],
+      //dilutionSeries: [],
       inputVolume: 100,
-      selectedPlate: null,
-      secondaryAntibody: null,
+      plate: null,
+      //secondaryAntibody: null,
       selectedSamples: {
         a: null,
         b: null,
         c: null,
+        d: null,
         e: null,
         f: null,
         g: null,
@@ -64,14 +65,39 @@ class App extends React.Component {
       timerOn: false,
       timerStamp: null,
       displayStamp: null,
-      log: []
+      log: [],
+      dilutionResults: null,
+      primaryResults: null,
+      phase: "primaryExposure",
+      phases: {
+        primaryExposure: null,
+        primaryWash: null,
+        secondaryExposure: null,
+        secondaryWash: null
+      }
     };
   }
 
   componentDidMount() {
+    const {
+      plate,
+      selectedSamples,
+      primaryEfficiencyFactor: pef,
+      dilutionFactor: df
+    } = this.state;
+
+    const dilutionFactor = calculateDilutionFactor(this.state.inputVolume);
+    const dilutionResults = this.generateAssayDilutions(
+      plate,
+      selectedSamples,
+      df,
+      pef
+    );
+
     this.setState({
-      dilutionFactor: calculateDilutionFactor(this.state.inputVolume),
-      results: this.generateAssayDilutionResults()
+      dilutionFactor,
+      dilutionResults,
+      primaryResults: { ...dilutionResults }
     });
   }
 
@@ -110,30 +136,55 @@ class App extends React.Component {
   }
 
   handleCountupFast() {
-    const { timerStamp, displayStamp } = this.state;
+    const {
+      timerStamp,
+      displayStamp,
+      phase,
+      phases,
+      dilutionResults,
+      primaryResults
+    } = this.state;
     const stamp = timerStamp + 20 * 1000;
     const display = displayStamp + 20 * 1000;
-    this.setState({ timerStamp: stamp, displayStamp: display });
+
+    let prime = null;
+
+    if (phase === "primaryExposure" && phases[phase] !== null) {
+      prime = this.generateAssayPrimePhase(dilutionResults, phases[phase]);
+    }
+
+    console.log(prime);
+
+    this.setState({
+      timerStamp: stamp,
+      displayStamp: display,
+      phases: {
+        ...phases,
+        [phase]: stamp
+      },
+      primaryResults: prime || primaryResults
+    });
   }
 
   generateAssayPrimePhase(diluteAssay, timestamp) {
     const results = { ...diluteAssay };
     Object.keys(results).map(i => {
-      return (results[i] = results[i].map(c => timeModifier(c, timestamp)));
+      const cell = results[i].map(c => timeModifier(c, timestamp));
+      return (results[i] = cell);
     });
     return results;
   }
 
-  generateAssayDilutionResults(
-    selectedPlate,
+  generateAssayDilutions(
+    plate,
     selectedSamples = {},
     dilutionFactor,
     primaryEfficiencyFactor
   ) {
     const results = {};
     Object.keys(selectedSamples).map(i => {
-      if (selectedSamples[i] && selectedPlate && dilutionFactor) {
-        const value = selectedSamples[i].plates[selectedPlate];
+      if (selectedSamples[i] && plate && dilutionFactor) {
+        const value = selectedSamples[i].plates[plate];
         return (results[i] = calculateDilutionSeries(
           value,
           dilutionFactor,
@@ -142,63 +193,104 @@ class App extends React.Component {
       }
       return (results[i] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     });
+
     return results;
   }
 
   handleSelectPlate(e) {
-    this.setState({
-      selectedPlate: e.target.value
-    });
+    const {
+      selectedSamples,
+      primaryEfficiencyFactor: pef,
+      dilutionFactor: df
+    } = this.state;
+
+    const plate = e.target.value;
+
+    const dilutionResults = this.generateAssayDilutions(
+      plate,
+      selectedSamples,
+      df,
+      pef
+    );
+
+    this.setState({ plate, dilutionResults });
   }
 
   handleSelectSample(key, subject) {
-    const { selectedSamples } = this.state;
+    const {
+      plate,
+      selectedSamples,
+      primaryEfficiencyFactor: pef,
+      dilutionFactor: df
+    } = this.state;
+
     const sample = this.samples.find(
       i => i.subject.toString() === subject.toString()
     );
-    this.setState({
-      selectedSamples: { ...selectedSamples, [key]: sample }
-    });
+    const samples = { ...selectedSamples, [key]: sample };
+    const dilutionResults = this.generateAssayDilutions(
+      plate,
+      samples,
+      df,
+      pef
+    );
+    this.setState({ selectedSamples: samples, dilutionResults });
   }
 
   handleDilutionVolume(e) {
+    const {
+      plate,
+      selectedSamples: samples,
+      primaryEfficiencyFactor: pef
+    } = this.state;
     const dilutionFactor = calculateDilutionFactor(+e.target.value);
+    const dilutionResults = this.generateAssayDilutions(
+      plate,
+      samples,
+      dilutionFactor,
+      pef
+    );
     this.setState({
       inputVolume: +e.target.value,
-      dilutionFactor
+      dilutionFactor,
+      dilutionResults
     });
   }
 
-  processLog() {
-    const {
-      log,
-      selectedPlate: plate,
-      selectedSamples: samples,
-      dilutionFactor: df,
-      primaryEfficiencyFactor: pef
-    } = this.state;
+  processDilutions() {
+    const { dilutionResults, phase, phases } = this.state;
 
-    let assay = this.generateAssayDilutionResults(plate, samples, df, pef);
+    //const assay = this.generateAssayDilutions(plate, samples, df, pef);
+
+    let result = { ...dilutionResults };
+
+    if (phase === "primaryExposure" && phases[phase] !== null) {
+      result = this.generateAssayPrimePhase(result, phases[phase]);
+    }
 
     // handle primary antibody waits
 
-    const primaryWaits = log.filter(i => i.action === "wait");
-
-    if (primaryWaits.length > 0) {
-      const primeWait = primaryWaits.reduce(
-        (total, curr) => total + curr.timerStamp,
-        0
-      );
-      assay = this.generateAssayPrimePhase(assay, primeWait);
-    }
+    // const primaryWaits = log.filter(i => i.action === "wait");
+    // if (primaryWaits.length > 0) {
+    //   const primeWait = primaryWaits.reduce(
+    //     (total, curr) => total + curr.timerStamp,
+    //     0
+    //   );
+    //   assay = this.generateAssayPrimePhase(assay, primeWait);
+    // }
 
     // handle secondary antibody waits
 
-    return assay;
+    console.log(result);
+    return result;
+
+    //this.setState({ results: assay });
   }
 
   renderResultTable(values) {
     const keys = Object.keys(values);
+
+    console.log("values", keys);
 
     return (
       <table style={{ fontSize: ".8rem" }}>
@@ -206,7 +298,8 @@ class App extends React.Component {
           {keys.map(k => (
             <tr key={k}>
               {values[k].map((cell, idx) => (
-                <td key={idx}>{roundPrecision(cell, 2)}</td>
+                // <td key={idx}>{roundPrecision(cell, 2)}</td>
+                <td key={idx}>{cell}</td>
               ))}
             </tr>
           ))}
@@ -222,17 +315,18 @@ class App extends React.Component {
   render() {
     const { plates, samples } = this;
     const {
-      selectedPlate,
+      plate,
       selectedSamples,
       dilutionFactor,
       timerOn,
       displayStamp,
-      log
+      log,
+      dilutionResults,
+      primaryResults
     } = this.state;
     const sampleKeys = Object.keys(selectedSamples);
 
-    const results = this.processLog(); //
-    //console.log(results);
+    //const results = this.processDilutions(); //
 
     return (
       <div className="app-container">
@@ -299,7 +393,7 @@ class App extends React.Component {
                 </option>
               ))}
             </select>{" "}
-            {selectedPlate || ""}
+            {plate || ""}
           </fieldset>
         </div>
 
@@ -309,8 +403,14 @@ class App extends React.Component {
 
         <hr />
 
-        <div style={{ maxWidth: "50%" }}>
-          {results && this.renderResultTable(results)}
+        <div style={{ maxWidth: "100%" }}>
+          <strong>Dilutions</strong>
+          {dilutionResults && this.renderResultTable(dilutionResults)}
+        </div>
+
+        <div style={{ maxWidth: "100%" }}>
+          <strong>Primary Exposure</strong>
+          {primaryResults && this.renderResultTable(primaryResults)}
         </div>
 
         <div style={{ maxWidth: "50%" }}>

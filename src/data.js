@@ -6,6 +6,7 @@ export const samples = [
     gender: "f",
     code: "v3002",
     plates: {
+      dummy: 15.2,
       "IgM RFs": 15.2,
       "IgG RFs": 1,
       "IgA RFs": 2,
@@ -22,6 +23,7 @@ export const samples = [
     gender: "f",
     code: "v3002",
     plates: {
+      dummy: 15.6,
       "IgM RFs": 70,
       "IgG RFs": 1,
       "IgA RFs": 2,
@@ -38,6 +40,7 @@ export const samples = [
     gender: "f",
     code: "v3002",
     plates: {
+      dummy: 50,
       "IgM RFs": 4,
       "IgG RFs": 4,
       "IgA RFs": 2,
@@ -54,6 +57,7 @@ export const samples = [
     gender: "f",
     code: "n1002",
     plates: {
+      dummy: 0.42,
       "IgM RFs": 80,
       "IgG RFs": 120,
       "IgA RFs": 4,
@@ -70,6 +74,58 @@ export const samples = [
     gender: "m",
     code: "P1004",
     plates: {
+      dummy: 6.1,
+      "IgM RFs": 80,
+      "IgG RFs": 160,
+      "IgA RFs": 10,
+      "anti-CCP": 40,
+      ANA: 8,
+      dsDNA: 8,
+      Sm: 0,
+      RNP: 12
+    }
+  },
+  {
+    subject: "bob",
+    condition: ["RA"],
+    gender: "m",
+    code: "P1004",
+    plates: {
+      dummy: 0.17,
+      "IgM RFs": 80,
+      "IgG RFs": 160,
+      "IgA RFs": 10,
+      "anti-CCP": 40,
+      ANA: 8,
+      dsDNA: 8,
+      Sm: 0,
+      RNP: 12
+    }
+  },
+  {
+    subject: "sue",
+    condition: ["RA"],
+    gender: "f",
+    code: "P1004",
+    plates: {
+      dummy: 0.34,
+      "IgM RFs": 80,
+      "IgG RFs": 160,
+      "IgA RFs": 10,
+      "anti-CCP": 40,
+      ANA: 8,
+      dsDNA: 8,
+      Sm: 0,
+      RNP: 12
+    }
+  },
+  {
+    subject: "lisa",
+    condition: ["RA"],
+    gender: "f",
+    code: "P1004",
+    plates: {
+      dummy: 70,
       "IgM RFs": 80,
       "IgG RFs": 160,
       "IgA RFs": 10,

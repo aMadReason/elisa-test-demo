@@ -30,6 +30,6 @@ export const roundPrecision = (num, dec) => {
 
 export function timeModifier(value, timestamp) {
   const timemodifier = 1 - 5 / (timestamp * 1000 * 60);
-  const result = value * timemodifier;
-  return Math.max(0.05, result);
+  const result = value * Math.max(timemodifier, 0.05);
+  return result;
 }
