@@ -5,7 +5,7 @@ import {
   calculateDilutionFactor,
   calculateDilutionSeries,
   getTimerMins,
-  roundPrecision,
+  //roundPrecision,
   timeModifier
 } from "./functions";
 import "./styles.css";
@@ -216,6 +216,19 @@ class App extends React.Component {
     this.setState({ plate, dilutionResults });
   }
 
+  handleChangePrimeEfficiency(e) {
+    const { plate, selectedSamples: samples, dilutionFactor: df } = this.state;
+
+    const primaryEfficiencyFactor = +e.target.value;
+    const dilutionResults = this.generateAssayDilutions(
+      plate,
+      samples,
+      df,
+      primaryEfficiencyFactor
+    );
+    this.setState({ dilutionResults, primaryEfficiencyFactor });
+  }
+
   handleSelectSample(key, subject) {
     const {
       plate,
@@ -335,11 +348,9 @@ class App extends React.Component {
           <label>
             Primary Efficiency Factor{" "}
             <input
-              type="number"
+              type="text"
               defaultValue={this.state.primaryEfficiencyFactor}
-              onInput={e =>
-                this.setState({ primaryEfficiencyFactor: e.target.value })
-              }
+              onInput={e => this.handleChangePrimeEfficiency(e)}
             />
           </label>
         </fieldset>

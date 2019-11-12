@@ -28,8 +28,9 @@ export const roundPrecision = (num, dec) => {
   ).toFixed(dec);
 };
 
+// timestamp in miliseconds
 export function timeModifier(value, timestamp) {
-  const timemodifier = 1 - 5 / (timestamp * 1000 * 60);
-  const result = value * Math.max(timemodifier, 0.05);
+  const timeModifier = 1 - 5 / (timestamp * 1000 * 60);
+  const result = value * Math.max(timeModifier, 0.05);
   return result;
 }
