@@ -47,10 +47,8 @@ class App extends React.Component {
     this.state = {
       primaryEfficiencyFactor: 1.0,
       dilutionFactor: null,
-      //dilutionSeries: [],
       inputVolume: 100,
       plate: null,
-      //secondaryAntibody: null,
       selectedSamples: {
         a: null,
         b: null,
@@ -62,7 +60,8 @@ class App extends React.Component {
         h: null
       },
       timer: null,
-      timerOn: false,
+      waitOn: false,
+      washOn: false,
       timerStamp: null,
       displayStamp: null,
       log: [],
@@ -105,6 +104,7 @@ class App extends React.Component {
     const { log } = this.state;
     const message = {
       default: ``,
+      wash: `Washed for ${getTimerMins(step.displayStamp)} minutes.`,
       wait: `Waited ${getTimerMins(step.displayStamp)} minutes.`,
       acid: `Acid applied.`
     }[step.action || "default"];
@@ -114,28 +114,39 @@ class App extends React.Component {
     });
   }
 
-  handleWait() {
-    const { timerOn, timerStamp, displayStamp } = this.state;
+  handleExposureOverTime(exposureType) {
+    const { timerStamp, displayStamp, phases, phase } = this.state;
     const start = +new Date();
+    const onType = exposureType + "On";
+    const isOn = this.state[onType];
 
-    if (timerOn === true) {
-      this.logStep({ action: "wait", timerStamp, displayStamp });
+    if (isOn) {
+      this.logStep({ action: exposureType, timerStamp, displayStamp });
+
+      if (exposureType === "wash") {
+        phases[phase].push(0);
+      }
+
       return this.setState({
         timer: clearInterval(this.state.timer),
-        timerOn: false,
-        displayStamp: null
+        [exposureType + "On"]: false,
+        displayStamp: null,
+        phases
       });
     }
 
+    console.log(this[exposureType]);
+
     this.setState({
       start,
-      timer: setInterval(() => this.handleCountupFast(), 150),
-      timerOn: true,
+      timer: setInterval(this[exposureType].bind(this), 150),
+      //timer: setInterval(() => this.wait(), 150),
+      [exposureType + "On"]: true,
       displayStamp: null
     });
   }
 
-  handleCountupFast() {
+  wait() {
     const {
       timerStamp,
       displayStamp,
@@ -147,13 +158,13 @@ class App extends React.Component {
     const stamp = timerStamp + 20 * 1000;
     const display = displayStamp + 20 * 1000;
 
+    console.log("wait");
+
     let prime = null;
 
     if (phase === "primaryExposure" && phases[phase] !== null) {
       prime = this.generateAssayPrimePhase(dilutionResults, phases[phase]);
     }
-
-    console.log(prime);
 
     this.setState({
       timerStamp: stamp,
@@ -163,6 +174,37 @@ class App extends React.Component {
         [phase]: stamp
       },
       primaryResults: prime || primaryResults
+    });
+  }
+
+  wash() {
+    const {
+      timerStamp,
+      displayStamp,
+      //phase,
+      phases
+      //primaryResults
+    } = this.state;
+    const stamp = timerStamp + 20 * 1000;
+    const display = displayStamp + 20 * 1000;
+
+    const washPhase = "primaryWash"; // need to programatically determine this
+    const primaryWash = phases.primaryWash || [0];
+
+    //primaryWash.push(stamp);
+    primaryWash[primaryWash.length - 1] =
+      primaryWash[primaryWash.length - 1] + stamp;
+
+    console.log("moo", primaryWash);
+
+    this.setState({
+      timerStamp: stamp,
+      displayStamp: display,
+      phase: washPhase,
+      phases: {
+        ...phases,
+        [washPhase]: primaryWash
+      }
     });
   }
 
@@ -294,7 +336,7 @@ class App extends React.Component {
 
     // handle secondary antibody waits
 
-    console.log(result);
+    // console.log(result);
     return result;
 
     //this.setState({ results: assay });
@@ -302,16 +344,13 @@ class App extends React.Component {
 
   renderResultTable(values) {
     const keys = Object.keys(values);
-
-    console.log("values", keys);
-
     return (
       <table style={{ fontSize: ".8rem" }}>
         <tbody>
           {keys.map(k => (
             <tr key={k}>
               {values[k].map((cell, idx) => (
-                // <td key={idx}>{roundPrecision(cell, 2)}</td>
+                //<td key={idx}>{roundPrecision(cell, 3)}</td>
                 <td key={idx}>{cell}</td>
               ))}
             </tr>
@@ -331,7 +370,8 @@ class App extends React.Component {
       plate,
       selectedSamples,
       dilutionFactor,
-      timerOn,
+      waitOn,
+      washOn,
       displayStamp,
       log,
       dilutionResults,
@@ -358,11 +398,20 @@ class App extends React.Component {
         <div>
           <button
             // disabled={acidApplied}
-            aria-pressed={timerOn}
-            onClick={({ nativeEvent }) => this.handleWait(nativeEvent)}
+            aria-pressed={waitOn}
+            onClick={({ nativeEvent }) => this.handleExposureOverTime("wait")}
           >
-            {timerOn ? "Wait Stop" : "Wait Start"}
+            {waitOn ? "Wait Stop" : "Wait Start"}
           </button>
+
+          <button
+            // disabled={acidApplied}
+            aria-pressed={washOn}
+            onClick={({ nativeEvent }) => this.handleExposureOverTime("wash")}
+          >
+            {washOn ? "Wash Stop" : "Wash Start"}
+          </button>
+
           <span>{this.renderTime(displayStamp)}</span>
         </div>
 

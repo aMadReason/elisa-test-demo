@@ -34,3 +34,18 @@ export function timeModifier(value, timestamp) {
   const result = value * Math.max(timeModifier, 0.05);
   return result;
 }
+
+export function calclateWashEfficiency(timestamp) {
+  const washEfficiency = 0.9 - 0.5 / (timestamp * 1000 * 60);
+  return Math.max(washEfficiency, 0);
+}
+
+export function calclateWashResidue(washEfficiencies = []) {
+  if (!Array.isArray(washEfficiencies) || washEfficiencies.length === 0) {
+    return 1;
+  }
+  return calclateWashEfficiency.reduce(
+    (acc, cur) => (acc = acc * (1 - cur)),
+    0 // initial value
+  );
+}
