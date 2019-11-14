@@ -16,9 +16,9 @@ export function calculateDilutionSeries(
   return values;
 }
 
-export function getTimerMins(stamp) {
-  return Math.round(+new Date(stamp) / 1000 / 60);
-}
+// export function getTimerMins(stamp) {
+//   return Math.round(+new Date(stamp) / 1000 / 60);
+// }
 
 export const roundPrecision = (num, dec) => {
   if (typeof num !== "number" || typeof dec !== "number") return false;
@@ -30,13 +30,13 @@ export const roundPrecision = (num, dec) => {
 
 // timestamp in miliseconds
 export function timeModifier(value, timestamp) {
-  const timeModifier = 1 - 5 / (timestamp * 1000 * 60);
+  const timeModifier = 1 - 5 / timestampToMins(timestamp);
   const result = value * Math.max(timeModifier, 0.05);
   return result;
 }
 
 export function calclateWashEfficiency(timestamp) {
-  const mins = timestamp * 1000 * 60;
+  const mins = timestampToMins(timestamp);
   const washEfficiency = 0.9 - 0.5 / mins;
   return Math.max(washEfficiency, 0);
 }
@@ -57,8 +57,10 @@ export function calclateWashResidueFromTimestamps(timestamps = []) {
     .filter(i => i)
     .map(t => calclateWashEfficiency(t));
 
-  //console.log(washEffiencies.map(i => 1 - i));
-
   const residue = calclateWashResidue(washEffiencies);
   return residue;
+}
+
+export function timestampToMins(timestamp) {
+  return Math.round(+new Date(timestamp) / 1000 / 60);
 }

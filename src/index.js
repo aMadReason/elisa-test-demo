@@ -4,10 +4,10 @@ import { samples } from "./data";
 import {
   calculateDilutionFactor,
   calculateDilutionSeries,
-  getTimerMins,
-  //roundPrecision,
+  roundPrecision,
   timeModifier,
-  calclateWashResidueFromTimestamps
+  calclateWashResidueFromTimestamps,
+  timestampToMins
 } from "./functions";
 import "./styles.css";
 
@@ -45,6 +45,17 @@ class App extends React.Component {
       "645nm": "0.11"
     };
 
+    this.secondaryAntibodies = {
+      "ab-test": {
+        efficiency: 1.9,
+        nonSpecificBinding: 0.08,
+        minVolume: 10,
+        maxWolume: 20,
+        exposureTimeInMins: 60,
+        washMins: 15
+      }
+    };
+
     this.state = {
       primaryEfficiencyFactor: 1.0,
       dilutionFactor: null,
@@ -68,7 +79,7 @@ class App extends React.Component {
       log: [],
       dilutionResults: null,
       primaryResults: null,
-      primaryWashResidue: null,
+      primaryWashResidue: 1,
       phase: "primaryExposure",
       phases: {
         primaryExposure: null,
@@ -106,8 +117,8 @@ class App extends React.Component {
     const { log } = this.state;
     const message = {
       default: ``,
-      wash: `Washed for ${getTimerMins(step.displayStamp)} minutes.`,
-      wait: `Waited ${getTimerMins(step.displayStamp)} minutes.`,
+      wash: `Washed for ${timestampToMins(step.displayStamp)} minutes.`,
+      wait: `Waited ${timestampToMins(step.displayStamp)} minutes.`,
       acid: `Acid applied.`
     }[step.action || "default"];
     log.push({ ...step, action: step.action, message });
@@ -117,17 +128,24 @@ class App extends React.Component {
   }
 
   handleExposureOverTime(exposureType) {
-    const { timerStamp, displayStamp, phases, phase } = this.state;
+    const {
+      timerStamp,
+      displayStamp,
+      phases,
+      phase,
+      primaryWashResidue
+    } = this.state;
     const start = +new Date();
     const onType = exposureType + "On";
     const isOn = this.state[onType];
+    let wr = primaryWashResidue;
 
     if (isOn) {
       this.logStep({ action: exposureType, timerStamp, displayStamp });
 
       if (exposureType === "wash") {
         phases[phase].push(0);
-        const val = calclateWashResidueFromTimestamps(phases[phase]);
+        wr = calclateWashResidueFromTimestamps(phases[phase]);
         //console.log(val);
       }
 
@@ -135,11 +153,10 @@ class App extends React.Component {
         timer: clearInterval(this.state.timer),
         [onType]: false,
         displayStamp: null,
-        phases
+        phases,
+        primaryWashResidue: wr
       });
     }
-
-    console.log(this[exposureType]);
 
     this.setState({
       start,
@@ -194,8 +211,8 @@ class App extends React.Component {
     const primaryWash = phases.primaryWash || [0];
 
     //primaryWash.push(stamp);
-    primaryWash[primaryWash.length - 1] =
-      primaryWash[primaryWash.length - 1] + stamp;
+    primaryWash[primaryWash.length - 1] = displayStamp;
+    console.log(primaryWash);
 
     this.setState({
       timerStamp: stamp,
@@ -350,18 +367,14 @@ class App extends React.Component {
           {keys.map(k => (
             <tr key={k}>
               {values[k].map((cell, idx) => (
-                //<td key={idx}>{roundPrecision(cell, 3)}</td>
-                <td key={idx}>{cell}</td>
+                <td key={idx}>{roundPrecision(cell, 3)}</td>
+                //<td key={idx}>{cell}</td>
               ))}
             </tr>
           ))}
         </tbody>
       </table>
     );
-  }
-
-  renderTime(stamp) {
-    return `${getTimerMins(stamp)} min`;
   }
 
   render() {
@@ -375,11 +388,15 @@ class App extends React.Component {
       displayStamp,
       log,
       dilutionResults,
-      primaryResults
+      primaryResults,
+      primaryWashResidue,
+      phases
     } = this.state;
     const sampleKeys = Object.keys(selectedSamples);
 
     //const results = this.processDilutions(); //
+
+    //console.log(primaryWashResidue);
 
     return (
       <div className="app-container">
@@ -412,7 +429,7 @@ class App extends React.Component {
             {washOn ? "Wash Stop" : "Wash Start"}
           </button>
 
-          <span>{this.renderTime(displayStamp)}</span>
+          <span>{timestampToMins(displayStamp)} mins</span>
         </div>
 
         <div style={{ maxWidth: "50%" }}>
@@ -458,7 +475,24 @@ class App extends React.Component {
         </div>
 
         <fieldset>
-          <legend>Step 3.2: Antibody Exposure & wash</legend>
+          <legend>Step 3.2: Primary Antibody Exposure & wash</legend>
+          <div>
+            Number of washes:{" "}
+            {Array.isArray(phases.primaryWash)
+              ? phases.primaryWash.filter(i => i).length
+              : 0}
+          </div>
+          Primary Wash Residue: {roundPrecision(primaryWashResidue, 3)}
+          <ul>
+            {Array.isArray(phases.primaryWash) &&
+              phases.primaryWash
+                .filter(i => i)
+                .map((i, idx) => (
+                  <li key={idx}>
+                    Wash {idx + 1} {timestampToMins(i)}
+                  </li>
+                ))}
+          </ul>
         </fieldset>
 
         <hr />
