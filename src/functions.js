@@ -46,9 +46,12 @@ export function calclateWashResidue(washEfficiencies = []) {
     return 1;
   }
 
+  console.log(washEfficiencies);
   const temp = washEfficiencies.map(i => 1 - i);
+  console.log(temp);
   let val = temp.shift();
-  washEfficiencies.map(v => (val = val * v));
+  temp.map(v => (val = val * v));
+  console.log(val);
   return val;
 }
 

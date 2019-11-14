@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import { samples } from "./data";
+import { samples, config } from "./data";
 import {
   calculateDilutionFactor,
   calculateDilutionSeries,
@@ -13,48 +13,15 @@ import "./styles.css";
 
 import SampleSelect from "./SampleSelect";
 
-// function getPlates(sample) {
-//   return Object.keys(sample.plates);
-// }
-
-// function getSubjectIds(samples) {
-//   return samples.map(i => i.subject);
-// }
-
-// function getSampleBySubject(samples, subjectId) {
-//   return samples.find(i => i.subject === subjectId);
-// }
-
-// const plates = getPlates(samples[0]);
-// const subjectIds = getSubjectIds(samples);
-
-// console.log(plates, subjectIds);
-
 class App extends React.Component {
   constructor(props) {
     super(props);
     this.samples = props.samples;
-    this.plates = this.samples && Object.keys(this.samples[0].plates);
+    this.plates = this.props.plates || Object.keys(props.samples[0].plates);
     this.logRef = null;
 
-    this.waveLengths = {
-      "450nm": "1.0",
-      "520nm": "0.4",
-      "544nm": "0.2",
-      "590nm": "0.14",
-      "645nm": "0.11"
-    };
-
-    this.secondaryAntibodies = {
-      "ab-test": {
-        efficiency: 1.9,
-        nonSpecificBinding: 0.08,
-        minVolume: 10,
-        maxWolume: 20,
-        exposureTimeInMins: 60,
-        washMins: 15
-      }
-    };
+    this.waveLengths = this.props.waveLengths || {};
+    this.secondaryAntibodies = this.props.secondaryAntibodies || {};
 
     this.state = {
       primaryEfficiencyFactor: 1.0,
@@ -212,7 +179,7 @@ class App extends React.Component {
 
     //primaryWash.push(stamp);
     primaryWash[primaryWash.length - 1] = displayStamp;
-    console.log(primaryWash);
+    //console.log(primaryWash);
 
     this.setState({
       timerStamp: stamp,
@@ -520,4 +487,4 @@ class App extends React.Component {
 }
 
 const rootElement = document.getElementById("root");
-ReactDOM.render(<App samples={samples} />, rootElement);
+ReactDOM.render(<App samples={samples} {...config} />, rootElement);

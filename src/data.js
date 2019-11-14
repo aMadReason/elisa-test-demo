@@ -1,4 +1,27 @@
-export const config = {};
+export const config = {
+  plates: [
+    "dummy",
+    "IgM RFs",
+    "IgG RFs",
+    "anti-CCP",
+    "ANA",
+    "dsDNA",
+    "Sm",
+    "RNP"
+  ],
+  secondaryAntibodies: {
+    "test-a": { efficiency: 1.9, binding: 0.08 },
+    "test-b": { plates: ["dummy", "RNP"], efficiency: 1.9, binding: 0.08 }
+  },
+  wavelengths: {
+    "450nm": "1.0",
+    "520nm": "0.4",
+    "544nm": "0.2",
+    "590nm": "0.14",
+    "645nm": "0.11"
+  }
+};
+
 export const samples = [
   {
     subject: "00a",
