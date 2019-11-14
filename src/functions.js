@@ -36,7 +36,8 @@ export function timeModifier(value, timestamp) {
 }
 
 export function calclateWashEfficiency(timestamp) {
-  const washEfficiency = 0.9 - 0.5 / (timestamp * 1000 * 60);
+  const mins = timestamp * 1000 * 60;
+  const washEfficiency = 0.9 - 0.5 / mins;
   return Math.max(washEfficiency, 0);
 }
 
@@ -44,8 +45,20 @@ export function calclateWashResidue(washEfficiencies = []) {
   if (!Array.isArray(washEfficiencies) || washEfficiencies.length === 0) {
     return 1;
   }
-  return calclateWashEfficiency.reduce(
-    (acc, cur) => (acc = acc * (1 - cur)),
-    0 // initial value
-  );
+
+  const temp = washEfficiencies.map(i => 1 - i);
+  let val = temp.shift();
+  washEfficiencies.map(v => (val = val * v));
+  return val;
+}
+
+export function calclateWashResidueFromTimestamps(timestamps = []) {
+  const washEffiencies = timestamps
+    .filter(i => i)
+    .map(t => calclateWashEfficiency(t));
+
+  //console.log(washEffiencies.map(i => 1 - i));
+
+  const residue = calclateWashResidue(washEffiencies);
+  return residue;
 }

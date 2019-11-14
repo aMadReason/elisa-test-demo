@@ -6,7 +6,8 @@ import {
   calculateDilutionSeries,
   getTimerMins,
   //roundPrecision,
-  timeModifier
+  timeModifier,
+  calclateWashResidueFromTimestamps
 } from "./functions";
 import "./styles.css";
 
@@ -67,6 +68,7 @@ class App extends React.Component {
       log: [],
       dilutionResults: null,
       primaryResults: null,
+      primaryWashResidue: null,
       phase: "primaryExposure",
       phases: {
         primaryExposure: null,
@@ -125,11 +127,13 @@ class App extends React.Component {
 
       if (exposureType === "wash") {
         phases[phase].push(0);
+        const val = calclateWashResidueFromTimestamps(phases[phase]);
+        //console.log(val);
       }
 
       return this.setState({
         timer: clearInterval(this.state.timer),
-        [exposureType + "On"]: false,
+        [onType]: false,
         displayStamp: null,
         phases
       });
@@ -157,8 +161,6 @@ class App extends React.Component {
     } = this.state;
     const stamp = timerStamp + 20 * 1000;
     const display = displayStamp + 20 * 1000;
-
-    console.log("wait");
 
     let prime = null;
 
@@ -194,8 +196,6 @@ class App extends React.Component {
     //primaryWash.push(stamp);
     primaryWash[primaryWash.length - 1] =
       primaryWash[primaryWash.length - 1] + stamp;
-
-    console.log("moo", primaryWash);
 
     this.setState({
       timerStamp: stamp,
