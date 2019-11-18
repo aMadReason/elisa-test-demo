@@ -113,7 +113,6 @@ class App extends React.Component {
       if (exposureType === "wash") {
         phases[phase].push(0);
         wr = calclateWashResidueFromTimestamps(phases[phase]);
-        //console.log(val);
       }
 
       return this.setState({
@@ -128,7 +127,6 @@ class App extends React.Component {
     this.setState({
       start,
       timer: setInterval(this[exposureType].bind(this), 150),
-      //timer: setInterval(() => this.wait(), 150),
       [exposureType + "On"]: true,
       displayStamp: null
     });
@@ -147,7 +145,6 @@ class App extends React.Component {
     const display = displayStamp + 20 * 1000;
 
     let prime = null;
-
     if (phase === "primaryExposure" && phases[phase] !== null) {
       prime = this.generateAssayPrimePhase(dilutionResults, phases[phase]);
     }
@@ -164,22 +161,13 @@ class App extends React.Component {
   }
 
   wash() {
-    const {
-      timerStamp,
-      displayStamp,
-      //phase,
-      phases
-      //primaryResults
-    } = this.state;
+    const { timerStamp, displayStamp, phases } = this.state;
     const stamp = timerStamp + 20 * 1000;
     const display = displayStamp + 20 * 1000;
 
     const washPhase = "primaryWash"; // need to programatically determine this
     const primaryWash = phases.primaryWash || [0];
-
-    //primaryWash.push(stamp);
     primaryWash[primaryWash.length - 1] = displayStamp;
-    //console.log(primaryWash);
 
     this.setState({
       timerStamp: stamp,
@@ -231,14 +219,12 @@ class App extends React.Component {
     } = this.state;
 
     const plate = e.target.value;
-
     const dilutionResults = this.generateAssayDilutions(
       plate,
       selectedSamples,
       df,
       pef
     );
-
     this.setState({ plate, dilutionResults });
   }
 
@@ -296,35 +282,33 @@ class App extends React.Component {
     });
   }
 
-  processDilutions() {
-    const { dilutionResults, phase, phases } = this.state;
+  // processDilutions() {
+  //   const { dilutionResults, phase, phases } = this.state;
 
-    //const assay = this.generateAssayDilutions(plate, samples, df, pef);
+  //   let result = { ...dilutionResults };
 
-    let result = { ...dilutionResults };
+  //   if (phase === "primaryExposure" && phases[phase] !== null) {
+  //     result = this.generateAssayPrimePhase(result, phases[phase]);
+  //   }
 
-    if (phase === "primaryExposure" && phases[phase] !== null) {
-      result = this.generateAssayPrimePhase(result, phases[phase]);
-    }
+  //   // handle primary antibody waits
 
-    // handle primary antibody waits
+  //   // const primaryWaits = log.filter(i => i.action === "wait");
+  //   // if (primaryWaits.length > 0) {
+  //   //   const primeWait = primaryWaits.reduce(
+  //   //     (total, curr) => total + curr.timerStamp,
+  //   //     0
+  //   //   );
+  //   //   assay = this.generateAssayPrimePhase(assay, primeWait);
+  //   // }
 
-    // const primaryWaits = log.filter(i => i.action === "wait");
-    // if (primaryWaits.length > 0) {
-    //   const primeWait = primaryWaits.reduce(
-    //     (total, curr) => total + curr.timerStamp,
-    //     0
-    //   );
-    //   assay = this.generateAssayPrimePhase(assay, primeWait);
-    // }
+  //   // handle secondary antibody waits
 
-    // handle secondary antibody waits
+  //   // console.log(result);
+  //   return result;
 
-    // console.log(result);
-    return result;
-
-    //this.setState({ results: assay });
-  }
+  //   //this.setState({ results: assay });
+  // }
 
   renderResultTable(values) {
     const keys = Object.keys(values);
@@ -335,7 +319,6 @@ class App extends React.Component {
             <tr key={k}>
               {values[k].map((cell, idx) => (
                 <td key={idx}>{roundPrecision(cell, 3)}</td>
-                //<td key={idx}>{cell}</td>
               ))}
             </tr>
           ))}
@@ -360,10 +343,6 @@ class App extends React.Component {
       phases
     } = this.state;
     const sampleKeys = Object.keys(selectedSamples);
-
-    //const results = this.processDilutions(); //
-
-    //console.log(primaryWashResidue);
 
     return (
       <div className="app-container">
