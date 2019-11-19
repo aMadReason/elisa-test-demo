@@ -1,3 +1,28 @@
+export function calculateConcentrationFactor(
+  volume,
+  initialConcentration = 500 // microgramPerMil
+) {
+  return (initialConcentration * volume) / 10000; // gives final concentration micrograms per mil
+}
+
+export function calculateBoundAntibody(
+  value,
+  concentration,
+  efficiency,
+  binding
+) {
+  if (+value === 0) return 0;
+  const value1 = concentration * efficiency * value;
+  return value1 + concentration * binding;
+}
+
+export function washModifier(value, washResidue, binding) {
+  let output = value + washResidue * binding * 100;
+  if (output < 0.05) output = 0.05;
+  if (output > 2) output = 2;
+  return;
+}
+
 export function calculateDilutionFactor(volume) {
   const vol = +volume; // make sure it's not a string
   return (100 + vol) / vol;
@@ -15,10 +40,6 @@ export function calculateDilutionSeries(
   }
   return values;
 }
-
-// export function getTimerMins(stamp) {
-//   return Math.round(+new Date(stamp) / 1000 / 60);
-// }
 
 export const roundPrecision = (num, dec) => {
   if (typeof num !== "number" || typeof dec !== "number") return false;

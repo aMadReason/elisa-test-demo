@@ -7,7 +7,10 @@ import {
   roundPrecision,
   timeModifier,
   calclateWashResidueFromTimestamps,
-  timestampToMins
+  timestampToMins,
+  calculateConcentrationFactor,
+  calculateBoundAntibody,
+  washModifier
 } from "./functions";
 import "./styles.css";
 
@@ -47,7 +50,10 @@ class App extends React.Component {
       dilutionResults: null,
       primaryResults: null,
       primaryWashResidue: 1,
+      secondaryResults: null,
       phase: "primaryExposure",
+      secondaryAntibody: null,
+      secondaryInputVolume: null,
       phases: {
         primaryExposure: null,
         primaryWash: null,
@@ -139,14 +145,21 @@ class App extends React.Component {
       phase,
       phases,
       dilutionResults,
-      primaryResults
+      primaryResults,
+      secondaryResults
     } = this.state;
     const stamp = timerStamp + 20 * 1000;
     const display = displayStamp + 20 * 1000;
 
     let prime = null;
     if (phase === "primaryExposure" && phases[phase] !== null) {
-      prime = this.generateAssayPrimePhase(dilutionResults, phases[phase]);
+      prime = this.modifyAssayByTime(dilutionResults, phases[phase]);
+    }
+
+    let second = null;
+    if (phase === "secondaryExposure" && phases[phase] !== null) {
+      second = this.modifyAssayByTime(secondaryResults, phases[phase]);
+      second = this.modifyAssayByWash(second);
     }
 
     this.setState({
@@ -156,7 +169,8 @@ class App extends React.Component {
         ...phases,
         [phase]: stamp
       },
-      primaryResults: prime || primaryResults
+      primaryResults: prime || primaryResults,
+      secondaryResults: second || secondaryResults
     });
   }
 
@@ -180,10 +194,21 @@ class App extends React.Component {
     });
   }
 
-  generateAssayPrimePhase(diluteAssay, timestamp) {
-    const results = { ...diluteAssay };
+  modifyAssayByTime(assay, timestamp) {
+    const results = { ...assay };
     Object.keys(results).map(i => {
       const cell = results[i].map(c => timeModifier(c, timestamp));
+      return (results[i] = cell);
+    });
+    return results;
+  }
+
+  modifyAssayByWash(assay) {
+    const { primaryWashResidue: wr, secondaryAntibody } = this.state;
+    const { binding } = secondaryAntibody;
+    const results = { ...assay };
+    Object.keys(results).map(i => {
+      const cell = results[i].map(c => washModifier(c, wr, binding));
       return (results[i] = cell);
     });
     return results;
@@ -282,33 +307,37 @@ class App extends React.Component {
     });
   }
 
-  // processDilutions() {
-  //   const { dilutionResults, phase, phases } = this.state;
+  handleABConcerntration(e) {
+    const { secondaryAntibody, primaryResults } = this.state;
+    const { efficiency, binding, microPerMil } = secondaryAntibody;
+    const value = +e.target.value;
 
-  //   let result = { ...dilutionResults };
+    const concentration = calculateConcentrationFactor(value, microPerMil);
 
-  //   if (phase === "primaryExposure" && phases[phase] !== null) {
-  //     result = this.generateAssayPrimePhase(result, phases[phase]);
-  //   }
+    const results = {};
+    Object.keys(primaryResults).map(i => {
+      results[i] = [];
+      primaryResults[i].map(v => {
+        return results[i].push(
+          calculateBoundAntibody(v, concentration, efficiency, binding)
+        );
+      });
+      return undefined;
+    });
 
-  //   // handle primary antibody waits
+    // secondary results
+    console.log(primaryResults);
+    console.log(results);
 
-  //   // const primaryWaits = log.filter(i => i.action === "wait");
-  //   // if (primaryWaits.length > 0) {
-  //   //   const primeWait = primaryWaits.reduce(
-  //   //     (total, curr) => total + curr.timerStamp,
-  //   //     0
-  //   //   );
-  //   //   assay = this.generateAssayPrimePhase(assay, primeWait);
-  //   // }
+    this.setState({ secondaryResults: results });
+  }
 
-  //   // handle secondary antibody waits
-
-  //   // console.log(result);
-  //   return result;
-
-  //   //this.setState({ results: assay });
-  // }
+  handleSelectSecondaryAB(key) {
+    this.setState({
+      phase: "secondaryExposure",
+      secondaryAntibody: this.secondaryAntibodies[key]
+    });
+  }
 
   renderResultTable(values) {
     const keys = Object.keys(values);
@@ -340,9 +369,13 @@ class App extends React.Component {
       dilutionResults,
       primaryResults,
       primaryWashResidue,
-      phases
+      phases,
+      secondaryAntibody,
+      secondaryResults
     } = this.state;
     const sampleKeys = Object.keys(selectedSamples);
+
+    const secondAntibodies = this.secondaryAntibodies;
 
     return (
       <div className="app-container">
@@ -441,6 +474,30 @@ class App extends React.Component {
           </ul>
         </fieldset>
 
+        <fieldset>
+          <legend>Step 4</legend>
+          <label>
+            <select
+              onChange={e => this.handleSelectSecondaryAB(e.target.value)}
+            >
+              <option>select..</option>
+              {Object.keys(secondAntibodies).map(k => (
+                <option value={k} key={k}>
+                  {k}
+                </option>
+              ))}
+            </select>
+          </label>
+          {JSON.stringify(secondaryAntibody, null, 2)}
+          <br />
+          <input
+            type="number"
+            defaultValue={this.state.secondaryInputVolume}
+            onInput={e => this.handleABConcerntration(e)}
+          />{" "}
+          {this.state.secondaryConcentration}
+        </fieldset>
+
         <hr />
 
         <div style={{ maxWidth: "100%" }}>
@@ -451,6 +508,11 @@ class App extends React.Component {
         <div style={{ maxWidth: "100%" }}>
           <strong>Primary Exposure</strong>
           {primaryResults && this.renderResultTable(primaryResults)}
+        </div>
+
+        <div style={{ maxWidth: "100%" }}>
+          <strong>Secondary Exposure</strong>
+          {secondaryResults && this.renderResultTable(secondaryResults)}
         </div>
 
         <div style={{ maxWidth: "50%" }}>

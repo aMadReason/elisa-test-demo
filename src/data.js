@@ -10,8 +10,13 @@ export const config = {
     "RNP"
   ],
   secondaryAntibodies: {
-    "test-a": { efficiency: 1.9, binding: 0.08 },
-    "test-b": { plates: ["dummy", "RNP"], efficiency: 1.9, binding: 0.08 }
+    "test-a": { efficiency: 1.9, binding: 0.08, microPerMil: 500 },
+    "test-b": {
+      plates: ["dummy", "RNP"],
+      efficiency: 1.9,
+      binding: 0.08,
+      microPerMil: 500
+    }
   },
   wavelengths: {
     "450nm": "1.0",
