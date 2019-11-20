@@ -10,7 +10,8 @@ import {
   timestampToMins,
   calculateConcentrationFactor,
   calculateBoundAntibody,
-  washModifier
+  washModifier,
+  calculateVariance
 } from "./functions";
 import "./styles.css";
 
@@ -82,7 +83,8 @@ class App extends React.Component {
     this.setState({
       dilutionFactor,
       dilutionResults,
-      primaryResults: { ...dilutionResults }
+      primaryResults: { ...dilutionResults },
+      secondaryResults: { ...dilutionResults }
     });
   }
 
@@ -151,6 +153,8 @@ class App extends React.Component {
     const stamp = timerStamp + 20 * 1000;
     const display = displayStamp + 20 * 1000;
 
+    console.log(phase);
+
     let prime = null;
     if (phase === "primaryExposure" && phases[phase] !== null) {
       prime = this.modifyAssayByTime(dilutionResults, phases[phase]);
@@ -209,8 +213,14 @@ class App extends React.Component {
     const results = { ...assay };
     Object.keys(results).map(i => {
       const cell = results[i].map(c => washModifier(c, wr, binding));
-      return (results[i] = cell);
+      //const variance = washModifier(cell, wr, binding);
+      return (results[i] = cell + variance);
     });
+    // Object.keys(results).map(i => {
+    //   let cell = results[i].map(c => washModifier(+c, wr, binding));
+    //   cell = cell + calculateVariance(cell, 8);
+    //   return (results[i] = cell);
+    // });
     return results;
   }
 
@@ -307,7 +317,8 @@ class App extends React.Component {
     });
   }
 
-  handleABConcerntration(e) {
+  handleABConcentration(e) {
+    // sets up initial ab concentration
     const { secondaryAntibody, primaryResults } = this.state;
     const { efficiency, binding, microPerMil } = secondaryAntibody;
     const value = +e.target.value;
@@ -318,9 +329,8 @@ class App extends React.Component {
     Object.keys(primaryResults).map(i => {
       results[i] = [];
       primaryResults[i].map(v => {
-        return results[i].push(
-          calculateBoundAntibody(v, concentration, efficiency, binding)
-        );
+        let ab = calculateBoundAntibody(v, concentration, efficiency, binding);
+        return results[i].push(ab);
       });
       return undefined;
     });
@@ -493,7 +503,7 @@ class App extends React.Component {
           <input
             type="number"
             defaultValue={this.state.secondaryInputVolume}
-            onInput={e => this.handleABConcerntration(e)}
+            onInput={e => this.handleABConcentration(e)}
           />{" "}
           {this.state.secondaryConcentration}
         </fieldset>

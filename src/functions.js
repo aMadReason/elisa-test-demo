@@ -20,7 +20,7 @@ export function washModifier(value, washResidue, binding) {
   let output = value + washResidue * binding * 100;
   if (output < 0.05) output = 0.05;
   if (output > 2) output = 2;
-  return;
+  return output;
 }
 
 export function calculateDilutionFactor(volume) {
@@ -39,6 +39,18 @@ export function calculateDilutionSeries(
     values.push(val);
   }
   return values;
+}
+
+const randomDec = (low = 0, high = 1, toFixed = 1) => {
+  let val = Math.random() * (high - low - 1) + low; // this will get a number between low and high;
+  return val.toFixed(toFixed);
+};
+
+export function calculateVariance(value, percent, toFixed = 2) {
+  const max = percent * (value / 100);
+  let result = randomDec(max, 2);
+  result *= Math.floor(Math.random() * 2) === 1 ? 1 : -1; // adds - 50% of time
+  return result.toFixed(toFixed);
 }
 
 export const roundPrecision = (num, dec) => {
@@ -66,13 +78,9 @@ export function calclateWashResidue(washEfficiencies = []) {
   if (!Array.isArray(washEfficiencies) || washEfficiencies.length === 0) {
     return 1;
   }
-
-  console.log(washEfficiencies);
   const temp = washEfficiencies.map(i => 1 - i);
-  console.log(temp);
   let val = temp.shift();
   temp.map(v => (val = val * v));
-  console.log(val);
   return val;
 }
 
