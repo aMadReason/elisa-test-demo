@@ -213,7 +213,8 @@ class App extends React.Component {
     const results = { ...assay };
     Object.keys(results).map(i => {
       const cell = results[i].map(c => washModifier(c, wr, binding));
-      //const variance = washModifier(cell, wr, binding);
+      const variance = calculateVariance(cell, wr, binding);
+      console.log(+variance);
       return (results[i] = cell + variance);
     });
     // Object.keys(results).map(i => {

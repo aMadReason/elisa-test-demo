@@ -50,7 +50,7 @@ export function calculateVariance(value, percent, toFixed = 2) {
   const max = percent * (value / 100);
   let result = randomDec(max, 2);
   result *= Math.floor(Math.random() * 2) === 1 ? 1 : -1; // adds - 50% of time
-  return result.toFixed(toFixed);
+  return max.toFixed(toFixed);
 }
 
 export const roundPrecision = (num, dec) => {
