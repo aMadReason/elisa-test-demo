@@ -18,6 +18,7 @@ export function calculateBoundAntibody(
 
 export function washModifier(value, washResidue, binding) {
   let output = value + washResidue * binding * 100;
+  //output = output + calculateVariance(output, 8);
   if (output < 0.05) output = 0.05;
   if (output > 2) output = 2;
   return output;
@@ -42,15 +43,14 @@ export function calculateDilutionSeries(
 }
 
 const randomDec = (low = 0, high = 1, toFixed = 1) => {
-  let val = Math.random() * (high - low - 1) + low; // this will get a number between low and high;
+  let val = Math.random() * (high - low) + low; // this will get a number between low and high;
   return val.toFixed(toFixed);
 };
 
-export function calculateVariance(value, percent, toFixed = 2) {
-  const max = percent * (value / 100);
-  let result = randomDec(max, 2);
-  result *= Math.floor(Math.random() * 2) === 1 ? 1 : -1; // adds - 50% of time
-  return max.toFixed(toFixed);
+export function calculateVariance(value, percent = 8, toFixed = 2) {
+  const max = (value / 100) * percent;
+  const variance = randomDec(-max, max, toFixed);
+  return variance;
 }
 
 export const roundPrecision = (num, dec) => {

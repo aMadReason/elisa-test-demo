@@ -54,6 +54,7 @@ class App extends React.Component {
       secondaryResults: null,
       phase: "primaryExposure",
       secondaryAntibody: null,
+      secondaryConcentration: null,
       secondaryInputVolume: null,
       phases: {
         primaryExposure: null,
@@ -148,12 +149,13 @@ class App extends React.Component {
       phases,
       dilutionResults,
       primaryResults,
-      secondaryResults
+      secondaryResults,
+      secondaryConcentration
     } = this.state;
     const stamp = timerStamp + 20 * 1000;
     const display = displayStamp + 20 * 1000;
 
-    console.log(phase);
+    //console.log(phase);
 
     let prime = null;
     if (phase === "primaryExposure" && phases[phase] !== null) {
@@ -162,7 +164,8 @@ class App extends React.Component {
 
     let second = null;
     if (phase === "secondaryExposure" && phases[phase] !== null) {
-      second = this.modifyAssayByTime(secondaryResults, phases[phase]);
+      second = this.secondAntibodyBinding(secondaryConcentration);
+      second = this.modifyAssayByTime(second, phases[phase]);
       second = this.modifyAssayByWash(second);
     }
 
@@ -210,19 +213,28 @@ class App extends React.Component {
   modifyAssayByWash(assay) {
     const { primaryWashResidue: wr, secondaryAntibody } = this.state;
     const { binding } = secondaryAntibody;
+
     const results = { ...assay };
     Object.keys(results).map(i => {
       const cell = results[i].map(c => washModifier(c, wr, binding));
-      const variance = calculateVariance(cell, wr, binding);
-      console.log(+variance);
-      return (results[i] = cell + variance);
+      return (results[i] = cell);
     });
+    return results;
+
     // Object.keys(results).map(i => {
-    //   let cell = results[i].map(c => washModifier(+c, wr, binding));
-    //   cell = cell + calculateVariance(cell, 8);
+    //   const cell = results[i].map(c => {
+    //     const washMod = washModifier(c, wr, binding);
+    //     //const variance = calculateVariance(washMod, wr, binding);
+    //     let withVariance = washMod;
+    //     if (withVariance < 0.05) withVariance = 0.05;
+    //     if (withVariance > 2) withVariance = 2.0;
+    //     return withVariance;
+    //   });
     //   return (results[i] = cell);
     // });
-    return results;
+
+    // console.log("res", results);
+    // return results;
   }
 
   generateAssayDilutions(
@@ -318,29 +330,36 @@ class App extends React.Component {
     });
   }
 
-  handleABConcentration(e) {
-    // sets up initial ab concentration
+  secondAntibodyBinding(concentration) {
     const { secondaryAntibody, primaryResults } = this.state;
-    const { efficiency, binding, microPerMil } = secondaryAntibody;
-    const value = +e.target.value;
-
-    const concentration = calculateConcentrationFactor(value, microPerMil);
-
-    const results = {};
+    const { efficiency, binding } = secondaryAntibody;
+    const initialResults = {};
     Object.keys(primaryResults).map(i => {
-      results[i] = [];
-      primaryResults[i].map(v => {
+      initialResults[i] = [];
+      primaryResults[i].map((v, idx) => {
         let ab = calculateBoundAntibody(v, concentration, efficiency, binding);
-        return results[i].push(ab);
+        return (initialResults[i][idx] = ab);
       });
       return undefined;
     });
+    return initialResults;
+  }
 
-    // secondary results
-    console.log(primaryResults);
-    console.log(results);
-
-    this.setState({ secondaryResults: results });
+  handleABConcentration(e) {
+    const { secondaryAntibody } = this.state;
+    const { microPerMil } = secondaryAntibody;
+    // sets up initial ab concentration
+    const concentration = calculateConcentrationFactor(
+      +e.target.value,
+      microPerMil
+    );
+    const value = +e.target.value;
+    const initialResults = this.secondAntibodyBinding(concentration);
+    const results = this.modifyAssayByWash(initialResults);
+    this.setState({
+      secondaryConcentration: concentration,
+      secondaryResults: results
+    });
   }
 
   handleSelectSecondaryAB(key) {
