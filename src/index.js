@@ -155,8 +155,6 @@ class App extends React.Component {
     const stamp = timerStamp + 20 * 1000;
     const display = displayStamp + 20 * 1000;
 
-    //console.log(phase);
-
     let prime = null;
     if (phase === "primaryExposure" && phases[phase] !== null) {
       prime = this.modifyAssayByTime(dilutionResults, phases[phase]);
@@ -216,25 +214,11 @@ class App extends React.Component {
 
     const results = { ...assay };
     Object.keys(results).map(i => {
-      const cell = results[i].map(c => washModifier(c, wr, binding));
-      return (results[i] = cell);
+      const washedRow = results[i].map(c => washModifier(c, wr, binding));
+      const variantRow = washedRow.map(c => c + calculateVariance(c, 8)); // adds random variation
+      return (results[i] = variantRow);
     });
     return results;
-
-    // Object.keys(results).map(i => {
-    //   const cell = results[i].map(c => {
-    //     const washMod = washModifier(c, wr, binding);
-    //     //const variance = calculateVariance(washMod, wr, binding);
-    //     let withVariance = washMod;
-    //     if (withVariance < 0.05) withVariance = 0.05;
-    //     if (withVariance > 2) withVariance = 2.0;
-    //     return withVariance;
-    //   });
-    //   return (results[i] = cell);
-    // });
-
-    // console.log("res", results);
-    // return results;
   }
 
   generateAssayDilutions(
@@ -353,7 +337,6 @@ class App extends React.Component {
       +e.target.value,
       microPerMil
     );
-    const value = +e.target.value;
     const initialResults = this.secondAntibodyBinding(concentration);
     const results = this.modifyAssayByWash(initialResults);
     this.setState({
