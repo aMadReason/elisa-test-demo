@@ -50,7 +50,6 @@ const randomDec = (low = 0, high = 1, toFixed = 1) => {
 export function calculateVariance(value, percent = 8, toFixed = 2) {
   const max = (value / 100) * percent;
   const variance = randomDec(-max, max, toFixed);
-  console.log("1", value, max, variance);
   return +variance;
 }
 

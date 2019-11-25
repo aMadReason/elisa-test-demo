@@ -315,13 +315,22 @@ class App extends React.Component {
   }
 
   secondAntibodyBinding(concentration) {
-    const { secondaryAntibody, primaryResults } = this.state;
-    const { efficiency, binding } = secondaryAntibody;
+    const { secondaryAntibody, primaryResults, plate } = this.state;
+    const { efficiency, binding, plates } = secondaryAntibody;
+    let eff = efficiency;
+
+    // if secondary antibody has specific plates defined
+    // set to zero if plate in state is invalid
+    if (plates && plates.length > 0) {
+      eff = plates.includes(plate) ? efficiency : 0;
+      console.warn("invalid plate, setting efficiency to 0");
+    }
+
     const initialResults = {};
     Object.keys(primaryResults).map(i => {
       initialResults[i] = [];
       primaryResults[i].map((v, idx) => {
-        let ab = calculateBoundAntibody(v, concentration, efficiency, binding);
+        let ab = calculateBoundAntibody(v, concentration, eff, binding);
         return (initialResults[i][idx] = ab);
       });
       return undefined;
@@ -508,7 +517,7 @@ class App extends React.Component {
             defaultValue={this.state.secondaryInputVolume}
             onInput={e => this.handleABConcentration(e)}
           />{" "}
-          {this.state.secondaryConcentration}
+          concentration: {this.state.secondaryConcentration}
         </fieldset>
 
         <hr />
