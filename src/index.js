@@ -23,6 +23,7 @@ class App extends React.Component {
     this.samples = props.samples;
     this.plates = this.props.plates || Object.keys(props.samples[0].plates);
     this.logRef = null;
+    this.variancePercent = 4;
 
     this.waveLengths = this.props.waveLengths || {};
     this.secondaryAntibodies = this.props.secondaryAntibodies || {};
@@ -215,7 +216,9 @@ class App extends React.Component {
     const results = { ...assay };
     Object.keys(results).map(i => {
       const washedRow = results[i].map(c => washModifier(c, wr, binding));
-      const variantRow = washedRow.map(c => c + calculateVariance(c, 8)); // adds random variation
+      const variantRow = washedRow.map(
+        c => c + calculateVariance(c, this.variancePercent)
+      ); // adds random variation
       return (results[i] = variantRow);
     });
     return results;
@@ -230,7 +233,7 @@ class App extends React.Component {
     const results = {};
     Object.keys(selectedSamples).map(i => {
       if (selectedSamples[i] && plate && dilutionFactor) {
-        const value = selectedSamples[i].plates[plate];
+        const value = selectedSamples[i].plates[plate] / 10;
         return (results[i] = calculateDilutionSeries(
           value,
           dilutionFactor,
@@ -411,6 +414,8 @@ class App extends React.Component {
               onInput={e => this.handleChangePrimeEfficiency(e)}
             />
           </label>
+
+          <div>variant percentage: {this.variancePercent}%</div>
         </fieldset>
 
         <div>
